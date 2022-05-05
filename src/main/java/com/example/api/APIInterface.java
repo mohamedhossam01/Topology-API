@@ -3,6 +3,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 package com.example.api;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
@@ -18,14 +19,16 @@ public interface APIInterface {
     boolean writeJSON(String TopologyID);
 
     //Query about which topologies are currently in the memory.
+    //TODO: figure out how to prettify the output.
     ArrayList<JsonObject> queryTopologies();
 
     //Delete a given topology from memory.
     boolean deleteTopology(String TopologyID);
 
     //Query about which devices are in a given topology.
-    DeviceList queryDevices(String TopologyID);
+    //TODO: figure out how to prettify the output.
+    JsonArray queryDevices(String TopologyID);
 
     //Query about which devices are connected to a given netlist node in a given topology.
-    DeviceList queryDevicesWithNetlistNode(int TopologyID, int NetlistNodeID);
+    ArrayList<JsonObject> queryDevicesWithNetlistNode(String TopologyID, String NetlistNodeID);
 }
