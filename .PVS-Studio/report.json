@@ -1,0 +1,80 @@
+{
+  "version": 2,
+  "warnings": [
+    {
+      "code": "V6021",
+      "cwe": 563,
+      "sastId": "CERT-MSC56-J",
+      "level": 2,
+      "positions": [
+        {
+          "file": "G:\\Java\\Topology-API\\src\\main\\java\\com\\example\\api\\API.java",
+          "line": 12,
+          "endLine": 12,
+          "column": 20,
+          "endColumn": 49,
+          "navigation": {
+            "previousLine": -1009897433,
+            "currentLine": -1116319091,
+            "nextLine": 587861,
+            "columns": 49
+          }
+        }
+      ],
+      "message": "Variable \u0027jsonObject\u0027 is not used.",
+      "projects": [],
+      "favorite": false,
+      "falseAlarm": false
+    },
+    {
+      "code": "V6021",
+      "cwe": 563,
+      "sastId": "CERT-MSC56-J",
+      "level": 2,
+      "positions": [
+        {
+          "file": "G:\\Java\\Topology-API\\src\\main\\java\\com\\example\\api\\API.java",
+          "line": 14,
+          "endLine": 14,
+          "column": 13,
+          "endColumn": 22,
+          "navigation": {
+            "previousLine": 587861,
+            "currentLine": 81317,
+            "nextLine": 88117,
+            "columns": 22
+          }
+        }
+      ],
+      "message": "Variable \u0027a\u0027 is not used.",
+      "projects": [],
+      "favorite": false,
+      "falseAlarm": false
+    },
+    {
+      "code": "V6007",
+      "cwe": 571,
+      "sastId": "CERT-MSC57-J",
+      "level": 1,
+      "positions": [
+        {
+          "file": "G:\\Java\\Topology-API\\src\\main\\java\\com\\example\\api\\API.java",
+          "line": 14,
+          "endLine": 14,
+          "column": 17,
+          "endColumn": 17,
+          "navigation": {
+            "previousLine": 587861,
+            "currentLine": 81317,
+            "nextLine": 88117,
+            "columns": 22
+          }
+        }
+      ],
+      "message": "Expression \u0027x\u0027 is always true.",
+      "projects": [],
+      "favorite": false,
+      "falseAlarm": false
+    }
+  ]
+}
