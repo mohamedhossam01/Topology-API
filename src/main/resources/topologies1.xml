@@ -1,0 +1,34 @@
+<topologies>
+  <topology>
+      <id>top1</id>
+      <components>
+        <component>
+            <type>resistor</type>
+            <id>res1</id>
+            <resistance>
+                <default>100</default>
+                <min>10</min>
+                <max>1000</max>
+            </resistance>
+            <netlist>
+                <t1>vdd</t1>
+                <t2>n1</t2>
+            </netlist>
+        </component>
+        <component>
+            <type>nmos</type>
+            <id>m1</id>
+            <ml>
+                <default>1.5</default>
+                <min>1</min>
+                <max>2</max>
+            </ml>
+            <netlist>
+                <drain>n1</drain>
+                <gate>vin</gate>
+                <source>vss</source>
+            </netlist>
+        </component>
+      </components>
+  </topology>
+</topologies>

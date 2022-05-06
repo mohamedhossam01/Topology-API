@@ -26,14 +26,17 @@ public class TopologyList {
         topologies.add(topology);
     }
 
-    public boolean deleteTopology(String topologyId) {
+    public Result deleteTopology(String topologyId) {
+        if(topologies.isEmpty()) {
+            return new Result(false, "No topologies to delete");
+        }
         for (int i = 0; i < topologies.size(); i++) {
             if (topologies.get(i).get("id").getAsString().equals(topologyId)) {
                 topologies.remove(i);
-                return true;
+                return new Result(true, "Topology deleted");
             }
         }
-        return false;
+        return new Result(false, "Topology not found");
     }
 
     public ArrayList<JsonObject> getTopologies() {
