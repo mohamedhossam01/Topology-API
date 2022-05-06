@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class TopologyList {
     private static TopologyList instance;
-    private ArrayList<JsonObject> topologies;
+    private final ArrayList<JsonObject> topologies;
 
     private TopologyList() {
         topologies = new ArrayList<>();
@@ -51,4 +51,5 @@ public class TopologyList {
         }
         return null;
     }
+
 }

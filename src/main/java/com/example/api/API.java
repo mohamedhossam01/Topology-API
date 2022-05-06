@@ -38,16 +38,12 @@ public class API implements APIInterface {
             }
             TopologyList.getInstance().addTopology(jsonObject);
         } catch (FileNotFoundException e) {
-            //e.printstacktrace();
             return new Result(false,"File not found" );
         } catch (IOException e) {
-            //e.printstacktrace();
             return new Result(false,"IOException" );
         } catch (JsonParseException e) {
-            //e.printstacktrace();
             return new Result(false,"Input is not a valid JSON file" );
         } catch (NullPointerException e) {
-            //e.printstacktrace();
             return new Result(false,"Topology doesn't contain ID field" );
         }
 
@@ -74,7 +70,10 @@ public class API implements APIInterface {
                 System.out.println("File already exists. Do you want to overwrite it? (y/n)");
                 String answer = scanner.nextLine();
                 if(answer.equals("y")||answer.equals("Y")) {
-                    file.delete();
+                    boolean delete = file.delete();
+                    if(!delete) {
+                        return new Result(false, "File not deleted");
+                    }
                 }
                 else {
                     return new Result(false, "File not overwritten");
@@ -85,48 +84,46 @@ public class API implements APIInterface {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            //e.printstacktrace();
             return new Result(false,"IOException" );
         }
         return new Result(true, "Successfully wrote JSON to file");
     }
 
     @Override
-    public ArrayList<JsonObject> queryTopologies() {
-        return TopologyList.getInstance().getTopologies();
+    public TopologyList queryTopologies() {
+        return TopologyList.getInstance();
     }
 
     @Override
-    public Result deleteTopology(String TopologyID) {
-        return TopologyList.getInstance().deleteTopology(TopologyID);
+    public Result deleteTopology(String topologyID) {
+        return TopologyList.getInstance().deleteTopology(topologyID);
     }
 
     @Override
-    public JsonArray queryDevices(String TopologyID) {
-        JsonObject topology = TopologyList.getInstance().getTopology(TopologyID);
+    public DeviceList queryDevices(String topologyID) {
+        JsonObject topology = TopologyList.getInstance().getTopology(topologyID);
         if(topology == null) {
-            return null;
+            return new DeviceList(new Result(false, "Could not find topology with ID: " + topologyID), null);
         }
         try
         {
-            return topology.get("components").getAsJsonArray();
+            return new DeviceList(new Result(true, "Successfully read JSON from file"), topology.get("components").getAsJsonArray());
         }
         catch (NullPointerException e)
         {
-            return null;
+            return new DeviceList(new Result(false, "Topology doesn't contain components field"), null);
         }
     }
 
     @Override
-    public ArrayList<JsonObject> queryDevicesWithNetlistNode(String TopologyID, String netlistNodeID, Result result) {
-        JsonArray jsonArray = queryDevices(TopologyID);
-        if(jsonArray == null) {
-            result.setStatus(false);
-            result.setMessage("Topology with id = " +TopologyID+ " does not exist");
-            return null;
+    public DeviceList queryDevicesWithNetlistNode(String topologyID, String netlistNodeID) {
+        DeviceList deviceList = queryDevices(topologyID);
+        JsonArray deviceArray = deviceList.getDevices();
+        if(deviceArray == null) {
+            return new DeviceList(new Result(false, "Topology with id = " + topologyID + " does not exist"), null);
         }
-        ArrayList<JsonObject> devices = new ArrayList<>();
-        for(JsonElement jsonElement : jsonArray) {
+        JsonArray devices = new JsonArray();
+        for(JsonElement jsonElement : deviceArray) {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             JsonObject netlistJson;
             try
@@ -147,19 +144,16 @@ public class API implements APIInterface {
             }
         }
         if(devices.isEmpty()) {
-            result.setStatus(false);
-            result.setMessage("No devices found with netlist node id = " + netlistNodeID + " exists");
+            return new DeviceList(new Result(false, "No devices with netlist node id = " +netlistNodeID+ " found"), null);
         }
         else
         {
-            result.setStatus(true);
-            result.setMessage("Successfully found devices");
+            return new DeviceList(new Result(true, "Successfully found devices"), devices);
         }
-        return devices;
     }
 
     @Override
-    public String prettyPrint(JsonObject jsonObject) {
+    public String prettyPrint(JsonElement jsonObject) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         return gson.toJson(jsonObject);
     }
@@ -190,7 +184,7 @@ public class API implements APIInterface {
                     System.out.println(api.readJSON(fileName).getMessage());
                 break;
                 case 2:
-                    ArrayList<JsonObject> topologies = api.queryTopologies();
+                    ArrayList<JsonObject> topologies = api.queryTopologies().getTopologies();
                     if(topologies.isEmpty()) {
                         System.out.println("No topologies exist");
                         break;
@@ -199,9 +193,9 @@ public class API implements APIInterface {
                     String topologyID = scanner.next();
 
                     //check if topology exists
-                    JsonArray devices = api.queryDevices(topologyID);
-                    if(devices == null) {
-                        System.out.println("Could not find topology with ID: " + topologyID);
+                    DeviceList devices = api.queryDevices(topologyID);
+                    if(!devices.getResult().getStatus()) {
+                        System.out.println(devices.getResult().getMessage());
                         break;
                     }
 
@@ -209,26 +203,25 @@ public class API implements APIInterface {
                     String answer = scanner.next();
                     fileName = "";
                     if(answer.equals("y")||answer.equals("Y")) {
-                        System.out.println("Enter file name: ");
+                        System.out.print("Enter file name: ");
                         fileName = scanner.next();
                     }
                     System.out.println(api.writeJSON(topologyID, fileName).getMessage());
                 break;
                 case 3:
-                    topologies = api.queryTopologies();
+                    topologies = api.queryTopologies().getTopologies();
                     if(topologies.isEmpty()) {
                         System.out.println("No topologies exist");
                         break;
                     }
                     System.out.println("Number of topologies: "+topologies.size());
                     for(JsonObject topology : topologies) {
-                        System.out.println("Topology ID: " + topology.get("id"));
                         System.out.println(api.prettyPrint(topology));
                         System.out.println("********************************************************");
                     }
                 break;
                 case 4:
-                    topologies = api.queryTopologies();
+                    topologies = api.queryTopologies().getTopologies();
                     if(topologies.isEmpty()) {
                         System.out.println("No topologies exist");
                         break;
@@ -238,7 +231,7 @@ public class API implements APIInterface {
                     System.out.println(api.deleteTopology(topologyID).getMessage());
                 break;
                 case 5:
-                    topologies = api.queryTopologies();
+                    topologies = api.queryTopologies().getTopologies();
                     if(topologies.isEmpty()) {
                         System.out.println("No topologies exist");
                         break;
@@ -248,25 +241,24 @@ public class API implements APIInterface {
 
                     //check if topology exists
                     devices = api.queryDevices(topologyID);
-                    if(devices == null) {
-                        System.out.println("Could not find topology with ID: " + topologyID);
+                    if(!devices.getResult().getStatus()) {
+                        System.out.println(devices.getResult().getMessage());
                         break;
                     }
 
-                    else if(devices.size() == 0) {
+                    else if(devices.getDevices().size() == 0) {
                         System.out.println("Topology with ID: " + topologyID + " exists but has no devices");
                     }
                     else {
-                        System.out.println("Number of devices: "+devices.size());
-                        for(JsonElement device : devices) {
-                            System.out.println("Device ID: " + device.getAsJsonObject().get("id"));
-                            System.out.println(api.prettyPrint((JsonObject) device));
+                        System.out.println("Number of devices: "+devices.getDevices().size());
+                        for(JsonElement device : devices.getDevices()) {
+                            System.out.println(api.prettyPrint(device));
                             System.out.println("********************************************************");
                         }
                     }
                 break;
                 case 6:
-                    topologies = api.queryTopologies();
+                    topologies = api.queryTopologies().getTopologies();
                     if(topologies.isEmpty()) {
                         System.out.println("No topologies exist");
                         break;
@@ -276,8 +268,8 @@ public class API implements APIInterface {
 
                     //check if topology exists
                     devices = api.queryDevices(topologyID);
-                    if(devices == null) {
-                        System.out.println("Could not find topology with ID: " + topologyID);
+                    if(!devices.getResult().getStatus()) {
+                        System.out.println(devices.getResult().getMessage());
                         break;
                     }
 
@@ -285,13 +277,13 @@ public class API implements APIInterface {
                     String node = scanner.next();
                     System.out.println("Devices: ");
                     Result result = new Result();
-                    ArrayList<JsonObject> devicesList = api.queryDevicesWithNetlistNode(topologyID, node, result);
+                    DeviceList deviceList = api.queryDevicesWithNetlistNode(topologyID, node);
                     if(!result.getStatus()) {
                         System.out.println(result.getMessage());
                     }
                     else
                     {
-                        for(JsonObject device : devicesList) {
+                        for(JsonElement device : deviceList.getDevices()) {
                             System.out.println(api.prettyPrint(device));
                             System.out.println("********************************************************");
                         }
