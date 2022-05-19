@@ -12,9 +12,8 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class API implements APIInterface {
-
     @Override
-    public Result readJSON(String fileName) {
+    public Result readJSON(String fileName, boolean overwrite) {
         try {
             FileReader reader = new FileReader(fileName);
             JsonElement jsonElement = JsonParser.parseReader(reader);
@@ -24,11 +23,11 @@ public class API implements APIInterface {
                 return new Result(false, "File is empty");
             }
             JsonObject jsonObject = (JsonObject) jsonElement;
-            if(queryDevices(jsonObject.get("id").getAsString()) != null) {
-                Scanner scanner = new Scanner(System.in);
-                System.out.println("Topology already exists. Do you want to overwrite it? (y/n)");
-                String answer = scanner.nextLine();
-                if(answer.equals("y")||answer.equals("Y")) {
+            //check if the topology exists in topology list
+            TopologyList topologyList = TopologyList.getInstance();
+            if(topologyList.getTopology(jsonObject.get("id").getAsString()) != null)
+            {
+                if(overwrite) {
                     deleteTopology(jsonObject.get("id").getAsString());
                 }
                 else
@@ -36,7 +35,7 @@ public class API implements APIInterface {
                     return new Result(false, "Topology not overwritten");
                 }
             }
-            TopologyList.getInstance().addTopology(jsonObject);
+            topologyList.addTopology(jsonObject);
         } catch (FileNotFoundException e) {
             return new Result(false,"File not found" );
         } catch (IOException e) {
@@ -51,7 +50,17 @@ public class API implements APIInterface {
     }
 
     @Override
-    public Result writeJSON(String TopologyID, String fileName) {
+    public Result readJSON(String fileName) {
+        return readJSON(fileName, false);
+    }
+
+    @Override
+    public Result writeJSON(String TopologyID, String fileName, boolean overwrite) {
+        if(queryTopologies().getTopologies().isEmpty())
+        {
+            return new Result(false, "No topologies in memory");
+        }
+
         if(fileName.isEmpty()) {
             fileName = TopologyID + ".json";
         }
@@ -66,13 +75,10 @@ public class API implements APIInterface {
         try {
             File file = new File(fileName);
             if(file.exists()) {
-                Scanner scanner = new Scanner(System.in);
-                System.out.println("File already exists. Do you want to overwrite it? (y/n)");
-                String answer = scanner.nextLine();
-                if(answer.equals("y")||answer.equals("Y")) {
+                if(overwrite) {
                     boolean delete = file.delete();
                     if(!delete) {
-                        return new Result(false, "File not deleted");
+                        return new Result(false, "Error deleting file, please try again");
                     }
                 }
                 else {
@@ -90,6 +96,11 @@ public class API implements APIInterface {
     }
 
     @Override
+    public Result writeJSON(String TopologyID, String fileName) {
+        return writeJSON(TopologyID, fileName, false);
+    }
+
+    @Override
     public TopologyList queryTopologies() {
         return TopologyList.getInstance();
     }
@@ -101,13 +112,18 @@ public class API implements APIInterface {
 
     @Override
     public DeviceList queryDevices(String topologyID) {
-        JsonObject topology = TopologyList.getInstance().getTopology(topologyID);
+        TopologyList topologyList = TopologyList.getInstance();
+        if(topologyList.getTopologies().isEmpty())
+        {
+            return new DeviceList(new Result(false, "No topologies in memory"), null);
+        }
+        JsonObject topology = topologyList.getTopology(topologyID);
         if(topology == null) {
             return new DeviceList(new Result(false, "Could not find topology with ID: " + topologyID), null);
         }
         try
         {
-            return new DeviceList(new Result(true, "Successfully read JSON from file"), topology.get("components").getAsJsonArray());
+            return new DeviceList(new Result(true, "Successfully queried devices"), topology.get("components").getAsJsonArray());
         }
         catch (NullPointerException e)
         {
@@ -117,6 +133,11 @@ public class API implements APIInterface {
 
     @Override
     public DeviceList queryDevicesWithNetlistNode(String topologyID, String netlistNodeID) {
+        TopologyList topologyList = TopologyList.getInstance();
+        if(topologyList.getTopologies().isEmpty())
+        {
+            return new DeviceList(new Result(false, "No topologies in memory"), null);
+        }
         DeviceList deviceList = queryDevices(topologyID);
         JsonArray deviceArray = deviceList.getDevices();
         if(deviceArray == null) {
@@ -153,9 +174,9 @@ public class API implements APIInterface {
     }
 
     @Override
-    public String prettyPrint(JsonElement jsonObject) {
+    public String prettyPrint(JsonElement jsonElement) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        return gson.toJson(jsonObject);
+        return gson.toJson(jsonElement);
     }
 
     public static void main(String[] args) {
@@ -180,8 +201,18 @@ public class API implements APIInterface {
             switch (choice) {
                 case 1:
                     System.out.println("Enter the file name: ");
-                    String fileName = scanner.next();
-                    System.out.println(api.readJSON(fileName).getMessage());
+                    String fileName;
+                    do {
+                        fileName = scanner.nextLine();
+                    } while (fileName.isEmpty());
+                    System.out.println("Do you want to overwrite existing topologies in memory if found? (y/n)");
+                    String overwrite = scanner.nextLine();
+                    while(!overwrite.equals("y") && !overwrite.equals("n")) {
+                        System.out.println("Please enter y or n");
+                        overwrite = scanner.nextLine();
+                    }
+                    Result result = api.readJSON(fileName, overwrite.equals("y"));
+                    System.out.println(result.getMessage());
                 break;
                 case 2:
                     ArrayList<JsonObject> topologies = api.queryTopologies().getTopologies();
@@ -190,7 +221,10 @@ public class API implements APIInterface {
                         break;
                     }
                     System.out.println("Enter topology ID: ");
-                    String topologyID = scanner.next();
+                    String topologyID;
+                    do {
+                        topologyID = scanner.nextLine();
+                    } while (topologyID.isEmpty());
 
                     //check if topology exists
                     DeviceList devices = api.queryDevices(topologyID);
@@ -200,13 +234,24 @@ public class API implements APIInterface {
                     }
 
                     System.out.println("Do you want to enter file name? (y/n)");
-                    String answer = scanner.next();
+                    String answer;
+                    do {
+                        answer = scanner.nextLine();
+                    } while (!answer.equals("y")&&!answer.equals("Y") && !answer.equals("n")&&!answer.equals("N"));
                     fileName = "";
                     if(answer.equals("y")||answer.equals("Y")) {
                         System.out.print("Enter file name: ");
-                        fileName = scanner.next();
+                        do {
+                            fileName = scanner.nextLine();
+                        } while (fileName.isEmpty());
                     }
-                    System.out.println(api.writeJSON(topologyID, fileName).getMessage());
+                    System.out.println("Do you want to overwrite existing files if found? (y/n)");
+                    do
+                    {
+                        overwrite = scanner.nextLine();
+                    } while (!overwrite.equals("y")&&!overwrite.equals("Y") && !overwrite.equals("n")&&!overwrite.equals("N"));
+                    result = api.writeJSON(topologyID, fileName, overwrite.equals("y"));
+                    System.out.println(result.getMessage());
                 break;
                 case 3:
                     topologies = api.queryTopologies().getTopologies();
@@ -227,7 +272,9 @@ public class API implements APIInterface {
                         break;
                     }
                     System.out.println("Enter the topology ID: ");
-                    topologyID = scanner.next();
+                    do {
+                        topologyID = scanner.nextLine();
+                    } while (topologyID.isEmpty());
                     System.out.println(api.deleteTopology(topologyID).getMessage());
                 break;
                 case 5:
@@ -237,7 +284,9 @@ public class API implements APIInterface {
                         break;
                     }
                     System.out.println("Enter the topology ID: ");
-                    topologyID = scanner.next();
+                    do {
+                        topologyID = scanner.nextLine();
+                    } while (topologyID.isEmpty());
 
                     //check if topology exists
                     devices = api.queryDevices(topologyID);
@@ -264,7 +313,9 @@ public class API implements APIInterface {
                         break;
                     }
                     System.out.println("Enter the topology ID: ");
-                    topologyID = scanner.next();
+                    do {
+                        topologyID = scanner.nextLine();
+                    } while (topologyID.isEmpty());
 
                     //check if topology exists
                     devices = api.queryDevices(topologyID);
@@ -274,15 +325,18 @@ public class API implements APIInterface {
                     }
 
                     System.out.println("Enter the netlist node: ");
-                    String node = scanner.next();
-                    System.out.println("Devices: ");
-                    Result result = new Result();
+                    String node;
+                    do {
+                        node = scanner.nextLine();
+                    } while (node.isEmpty());
                     DeviceList deviceList = api.queryDevicesWithNetlistNode(topologyID, node);
+                    result = deviceList.getResult();
                     if(!result.getStatus()) {
                         System.out.println(result.getMessage());
                     }
                     else
                     {
+                        System.out.println("Devices: ");
                         for(JsonElement device : deviceList.getDevices()) {
                             System.out.println(api.prettyPrint(device));
                             System.out.println("********************************************************");

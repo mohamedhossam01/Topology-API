@@ -5,11 +5,13 @@ package com.example.api;
 
 import com.google.gson.JsonArray;
 
+import java.util.Objects;
+
 public class DeviceList {
     private final Result result;
     private final JsonArray devices;
 
-    DeviceList(Result result, JsonArray devices) {
+    public DeviceList(Result result, JsonArray devices) {
         this.result = result;
         this.devices = devices;
     }
@@ -21,4 +23,5 @@ public class DeviceList {
     public JsonArray getDevices() {
         return devices;
     }
+
 }

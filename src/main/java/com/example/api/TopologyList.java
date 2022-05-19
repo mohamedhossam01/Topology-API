@@ -28,15 +28,15 @@ public class TopologyList {
 
     public Result deleteTopology(String topologyId) {
         if(topologies.isEmpty()) {
-            return new Result(false, "No topologies to delete");
+            return new Result(false, "No topologies in memory");
         }
         for (int i = 0; i < topologies.size(); i++) {
             if (topologies.get(i).get("id").getAsString().equals(topologyId)) {
                 topologies.remove(i);
-                return new Result(true, "Topology deleted");
+                return new Result(true, "Successfully deleted topology");
             }
         }
-        return new Result(false, "Topology not found");
+        return new Result(false, "Topology with this ID does not exist");
     }
 
     public ArrayList<JsonObject> getTopologies() {
@@ -52,4 +52,7 @@ public class TopologyList {
         return null;
     }
 
+    public void clear() {
+        topologies.clear();
+    }
 }

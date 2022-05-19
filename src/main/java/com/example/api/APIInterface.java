@@ -5,11 +5,18 @@ package com.example.api;
 
 import com.google.gson.JsonElement;
 
+import java.util.Scanner;
+
 public interface APIInterface {
-    //Read a topology from a given JSON file and store it in the memory.
+
+    //Read a topology from a given JSON file and store it in the memory
+    //Default overwrite is false
+    Result readJSON(String fileName, boolean overwrite);
     Result readJSON(String fileName);
 
     //Write a given topology from the memory to a JSON file with a given name.
+    //Default overwrite is false
+    Result writeJSON(String TopologyID, String fileName, boolean overwrite);
     Result writeJSON(String TopologyID, String fileName);
 
     //Query about which topologies are currently in the memory.
@@ -25,5 +32,5 @@ public interface APIInterface {
     DeviceList queryDevicesWithNetlistNode(String topologyID, String netlistNodeID);
 
     //Helper function to pretty print a given JSON object.
-    String prettyPrint(JsonElement jsonObject);
+    String prettyPrint(JsonElement jsonElement);
 }
