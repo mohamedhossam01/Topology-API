@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"com.example.api","l":"API"},{"p":"com.example.api","l":"APIInterface"},{"p":"com.example.api","l":"DeviceList"},{"p":"com.example.api","l":"Result"},{"p":"com.example.api","l":"TopologyList"}];updateSearchResults();
