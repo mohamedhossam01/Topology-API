@@ -11,7 +11,34 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+/**
+ * API class for the project which contains all the API methods and the main method to test the API. It covers the following:
+ * <ol>
+ *     <li>
+ *         <b>{@link #readJSON(String) Read a topology from a given JSON File and store it in the memory.}</b>
+ *     </li>
+ *     <li>
+ *         <b>{@link #writeJSON(String, String) Write a given topology from the memory to a JSON file.}</b>
+ *     </li>
+ *     <li>
+ *         <b>{@link #queryTopologies() Query about which topologies are currently in the memory.}</b>
+ *     </li>
+ *     <li>
+ *         <b>{@link #deleteTopology(String) Delete a given topology from memory.}</b>
+ *     </li>
+ *     <li>
+ *         <b>{@link #queryDevices(String) Query about which devices are in a given topology.}</b>
+ *     </li>
+ *     <li>
+ *         <b>{@link #queryDevicesWithNetlistNode(String, String) Query about which devices are connected to a given netlist node in
+ * a given topology.}</b>
+ *     </li>
+ * </ol>
+ * @author Mohamed Hossam
+ * @version 1.0
+ */
 public class API implements APIInterface {
+
     @Override
     public Result readJSON(String fileName, boolean overwrite) {
         try {
@@ -179,6 +206,10 @@ public class API implements APIInterface {
         return gson.toJson(jsonElement);
     }
 
+    /**
+     * Demo method to test the functionality of the API
+     * @param args the command line arguments
+     */
     public static void main(String[] args) {
         API api = new API();
         Scanner scanner = new Scanner(System.in);
